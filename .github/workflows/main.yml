@@ -1,0 +1,97 @@
+PowerShell Modules Example 
+
+Vmware module :
+# Install VMware PowerCLI (if not already installed)
+Install-Module -Name VMware.PowerCLI -Force -AllowClobber
+
+# Connect to vCenter Server
+Connect-VIServer -Server <vCenterServer> -User <Username> -Password <Password>
+
+# Create a new VM
+New-VM -Name "YourVMName" -VMHost "YourESXiHost" -Datastore "YourDatastore" -DiskGB 50 -MemoryGB 4 -NumCpu 2 -GuestId "windows9_64Guest"
+
+# Get the VM
+$vm = Get-VM -Name "YourVMName"
+
+# Customize VM settings (e.g., add a network adapter)
+$network = Get-VirtualSwitch -Name "YourVirtualSwitch"
+Add-NetworkAdapter -VM $vm -NetworkName $network
+
+# Power on the VM
+Start-VM -VM $vm
+
+# Disconnect from vCenter Server
+Disconnect-VIServer -Server * -Confirm:$false
+Azure Module:
+# Install and import the Azure PowerShell module
+Install-Module -Name Az -Force -AllowClobber -Scope CurrentUser
+Import-Module Az
+
+# Connect to Azure account
+Connect-AzAccount
+
+# Define variables
+$resourceGroupName = "YourResourceGroup"
+$vmName = "YourVMName"
+$location = "YourLocation"
+$networkInterfaceResourceId = "<NetworkInterfaceResourceId>"
+
+# Create a new VM configuration
+$vmConfig = New-AzVMConfig -VMName $vmName -VMSize "Standard_DS1_v2"
+
+# Set VM operating system configuration
+$cred = Get-Credential -Message "Enter a username and password for the virtual machine."
+$vmConfig = Set-AzVMOperatingSystem -VM $vmConfig -Windows -ComputerName $vmName -Credential $cred -ProvisionVMAgent -EnableAutoUpdate
+
+# Add network interface to the VM
+$vmConfig = Add-AzVMNetworkInterface -VM $vmConfig -Id $networkInterfaceResourceId
+
+# Set VM source image
+$vmConfig = Set-AzVMSourceImage -VM $vmConfig -PublisherName "MicrosoftWindowsServer" -Offer "WindowsServer" -Skus "2019-Datacenter" -Version "latest"
+
+# Create the new VM
+New-AzVM -ResourceGroupName $resourceGroupName -Location $location -VM $vmConfig -Verbose
+
+# Disconnect from Azure
+Disconnect-AzAccount
+
+AD module:
+# Import the Active Directory module
+Import-Module ActiveDirectory
+
+# Define user details
+$userName = "NewUser"
+$firstName = "John"
+$lastName = "Doe"
+$userPrincipalName = "$userName@yourdomain.com"
+$password = "P@ssw0rd" | ConvertTo-SecureString -AsPlainText -Force
+$ouPath = "OU=Users,DC=yourdomain,DC=com"
+
+# Create the new AD user
+New-ADUser -SamAccountName $userName -UserPrincipalName $userPrincipalName -GivenName $firstName -Surname $lastName -Name "$firstName $lastName" -Enabled $true -AccountPassword $password -Path $ouPath
+
+# Optional: Add the user to a group
+$groupName = "YourGroupName"
+Add-ADGroupMember -Identity $groupName -Members $userName
+
+ILO Module :
+
+# Import the iLO module
+Import-Module HPEiLOCmdlets
+
+# Set iLO connection parameters
+$iloHostname = "ilo.example.com"
+$iloUsername = "admin"
+$iloPassword = "yourpassword"
+
+# Connect to iLO
+Connect-HPEiLO -Host $iloHostname -Credential (Get-Credential -Credential $iloUsername)
+
+# Get iLO information
+Get-HPEiLOInformation
+
+# Get power status of the server
+Get-HPEiLOServerPower
+
+# Disconnect from iLO
+Disconnect-HPEiLO
